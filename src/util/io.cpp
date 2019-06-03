@@ -13,12 +13,14 @@
 #include "./io.hpp"
 #include "../proto/caffe.pb.h"
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #include <io.h>
 #define open _open
 #else
 #include <unistd.h>
+#ifndef O_BINARY
 #define O_BINARY 0x00
+#endif
 #endif
 
 const int kProtoReadBytesLimit = std::numeric_limits<int>::max();  // Max size of 2 GB minus 1 byte.
