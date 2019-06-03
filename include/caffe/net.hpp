@@ -45,6 +45,12 @@ class CAFFE_API Net {
    */
   void Reshape();
 
+  /**
+   * @brief For an already initialized net, implicitly copies (i.e., using no
+   *        additional memory) the pre-trained layers from another Net.
+   */
+  void ShareTrainedLayersWith(const Net* other);
+
   // For an already initialized net, CopyTrainedLayersFrom() copies the already
   // trained layers from another net parameter instance.
   /**
@@ -58,6 +64,8 @@ class CAFFE_API Net {
 
   /// @brief returns the network name.
   const string& name() const { return name_; }
+  /// @brief returns the layer names
+  const vector<string>& layer_names() const { return layer_names_; }
   /// @brief returns the blob names
   const vector<string>& blob_names() const { return blob_names_; }
   /// @biref return the param names
@@ -66,6 +74,11 @@ class CAFFE_API Net {
   const vector<shared_ptr<Blob> >& blobs() const {
     return blobs_;
   }
+  /// @brief returns the layers
+  inline const vector<shared_ptr<Layer> >& layers() const {
+    return layers_;
+  }
+
   /// @brief all parameters
   const vector<shared_ptr<Blob> >& params() const {
     return params_;

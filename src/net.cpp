@@ -338,4 +338,35 @@ shared_ptr<NetParameter> ReadBinaryNetParameterFromBuffer(const char* buffer, in
   return np;
 }
 
+void Net::ShareTrainedLayersWith(const Net* other) {
+  int num_source_layers = other->layers().size();
+  for (int i = 0; i < num_source_layers; ++i) {
+    Layer* source_layer = other->layers()[i].get();
+    const string& source_layer_name = other->layer_names()[i];
+    int target_layer_id = 0;
+    while (target_layer_id != layer_names_.size() &&
+        layer_names_[target_layer_id] != source_layer_name) {
+      ++target_layer_id;
+    }
+    if (target_layer_id == layer_names_.size()) {
+      LOG(INFO) << "Ignoring source layer " << source_layer_name;
+      continue;
+    }
+    DLOG(INFO) << "Copying source layer " << source_layer_name;
+    vector<shared_ptr<Blob > >& target_blobs =
+        layers_[target_layer_id]->blobs();
+    CHECK_EQ(target_blobs.size(), source_layer->blobs().size())
+        << "Incompatible number of blobs for layer " << source_layer_name;
+    for (int j = 0; j < target_blobs.size(); ++j) {
+      Blob* source_blob = source_layer->blobs()[j].get();
+      CHECK(target_blobs[j]->shape() == source_blob->shape())
+          << "Cannot share param " << j << " weights from layer '"
+          << source_layer_name << "'; shape mismatch.  Source param shape is "
+          << source_blob->shape_string() << "; target param shape is "
+          << target_blobs[j]->shape_string();
+      target_blobs[j]->ShareData(*source_blob);
+    }
+  }
+}
+
 }  // namespace caffe
