@@ -3,9 +3,10 @@
 option(USE_CUDA "Use CUDA support" OFF)
 option(USE_CUDNN "Use CUDNN support" OFF)
 option(USE_JAVA "Use JAVA support" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # select BLAS
-set(BLAS "openblas" CACHE STRING "Selected BLAS library")
+set(BLAS "cblas" CACHE STRING "Selected BLAS library")
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Cuda.cmake)
 
@@ -27,6 +28,15 @@ if(MSVC)
   link_directories(${CMAKE_CURRENT_LIST_DIR}/3rdparty/lib)
   list(APPEND Caffe_LINKER_LIBS debug libprotobufd optimized libprotobuf
                                 libopenblas)
+elseif(MINGW)
+  include_directories(${CMAKE_CURRENT_LIST_DIR}/../lapack/BUILD-mingw/install/include
+	              ${CMAKE_CURRENT_LIST_DIR}/../protobuf/BUILD-mingw/install/include
+                      ${CMAKE_CURRENT_LIST_DIR}/include)
+  link_directories(${CMAKE_CURRENT_LIST_DIR}/../lapack/BUILD-mingw/install/lib
+                   ${CMAKE_CURRENT_LIST_DIR}/../protobuf/BUILD-mingw/install/lib)
+
+  list(APPEND Caffe_LINKER_LIBS optimized protobuf
+                                cblas blas gfortran)
 elseif(ANDROID)
   # TODO https://github.com/android-ndk/ndk/issues/105
   set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -nodefaultlibs -lgcc -lc -lm -ldl")
@@ -122,6 +132,7 @@ if(ANDROID)
   list(APPEND CAFFE_COMPILE_CODE ${CAFFE_SRC_JNI})
 endif()
 
+
 # file structure
 source_group(include FILES ${CAFFE_INCLUDE})
 source_group(src FILES ${CAFFE_SRC})
@@ -132,5 +143,10 @@ source_group(src\\jni FILES ${CAFFE_SRC_JNI})
 source_group(src\\layers\\cudnn FILES ${CAFFE_SRC_LAYERS_CUDNN})
 
 add_definitions(-DCAFFE_EXPORTS)
-add_library(caffe SHARED ${CAFFE_COMPILE_CODE})
+
+if(BUILD_SHARED_LIBS)
+  add_library(caffe SHARED ${CAFFE_COMPILE_CODE})
+else()
+  add_library(caffe STATIC ${CAFFE_COMPILE_CODE})
+endif()
 target_link_libraries(caffe ${Caffe_LINKER_LIBS})
